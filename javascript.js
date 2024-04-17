@@ -50,6 +50,7 @@ const gameControlloer = (function () {
             return gameBoard;
         };
         gameBoard[position] = Players[currentIndex].marker;
+        checkWins();
         switchMove();
         return gameBoard;
     }
@@ -60,6 +61,19 @@ const gameControlloer = (function () {
             return true;
         }
         return false;
+    }
+
+    // Check if game is won
+    const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8] , [2,4,6]];
+    function checkWins () {
+        for (win of wins) {
+            let won = win.every((item) => {
+                return gameBoard[item] == Players[currentIndex].marker;
+            }) 
+            if (won) {
+                console.log(`Game is over, ${Players[currentIndex]} won`);
+            }
+        }
     }
 
     // Factory fucntion return
@@ -84,4 +98,8 @@ const gameControlloer = (function () {
         // Play a move
         playMove,
     }
+})();
+
+const DOMControlloer = (()=>  {
+    
 })();
