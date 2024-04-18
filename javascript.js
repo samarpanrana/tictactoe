@@ -3,18 +3,21 @@ const gameControlloer = (function () {
 
     // Make two player objects on load
     let playerCount = 1;
-    function Player (name, marker = 'x') {
+    function Player (name, marker = 'x', color) {
+        color = 'blue';
         if (playerCount > 1) {
             marker = 'o';
+            color = 'red';
         }
         playerCount++;
         return {
             name,
             marker,
+            color,
         }
     }
-    let player1 = Player ('player1');
-    let player2 = Player ('player2');
+    let player1 = Player ('Player1');
+    let player2 = Player ('Player2');
     let Players = [player1, player2];
 
     // Make gameboard with an array
@@ -43,24 +46,55 @@ const gameControlloer = (function () {
         return false;
     }
 
-    // Play a mark on a gameboard position
-    let playMove = (position, mark) => {
-        if (!checkMoveValidity(position)) {
-            console.log("Invalid move");
-            return gameBoard;
-        };
-        gameBoard[position] = Players[currentIndex].marker;
-        checkWins();
-        switchMove();
-        return gameBoard;
+    // Extra game context message
+    let extraMessage = '';
+
+    // check if all squares are marked
+    function checkAllMarked () {
+        let allMakred = gameBoard.every((square) => {
+            if (square != ' ') {
+                return true;
+            }
+            return false;
+        })
+        return allMakred;
     }
 
-    // Check input if the input is valid
-    let checkinput = (userInput) => {
-        if (userInput == 'X' || userInput =='x' || userInput == 'O' || userInput == 'o' || userInput == ' ') {
-            return true;
+    // Play a mark on a gameboard position
+    let playMove = (position, mark) => {
+
+        // check if game won
+        if (freezeAll) {
+            return gameBoard;
         }
-        return false;
+
+        // check if move is valid
+        if (!checkMoveValidity(position)) {
+            extraMessage = ("Invalid move");
+            return gameBoard;
+        }
+        else {
+            extraMessage = "";
+        }
+       
+        // mark the square
+        gameBoard[position] = Players[currentIndex].marker;
+
+         // check if all squares are marked
+        if (checkAllMarked()) {
+            extraMessage = `No one won`;
+            freezeAll = true;
+        }
+
+        // check if won
+        if (checkWins()) {
+            extraMessage = `Game Over`;
+            freezeAll = true;
+            return gameBoard;
+        };
+
+        switchMove();
+        return gameBoard;
     }
 
     // Check if game is won
@@ -71,10 +105,19 @@ const gameControlloer = (function () {
                 return gameBoard[item] == Players[currentIndex].marker;
             }) 
             if (won) {
-                console.log(`Game is over, ${Players[currentIndex]} won`);
+               return true;
             }
         }
+        return false;
     }
+
+    // get game context and extramessages
+    function getContext () {
+        return (`${Players[currentIndex].name}, ${Players[currentIndex].color}, ${extraMessage}`);
+    }
+
+    // freeze once game over
+    let freezeAll = false;
 
     // Factory fucntion return
     return {
@@ -97,9 +140,70 @@ const gameControlloer = (function () {
 
         // Play a move
         playMove,
+        getContext,
     }
 })();
 
 const DOMControlloer = (()=>  {
-    
+
+    // make grid on load
+    let grid = document.querySelector('.grid');
+    render();
+
+    function render () {
+        grid.innerHTML = ``;
+        for (let i = 0; i < 9; i++) {
+            let square = document.createElement('div');
+            square.dataset.squareIndex = i;
+            square.classList.add('square');
+            let mark = gameControlloer.gameBoard[i];
+            let markImg = document.createElement('div')
+
+            if (mark == 'x') {
+                markImg.classList.add('cross')
+            }
+            else if (mark == 'o') {
+                markImg.classList.add('circle')
+            }
+            
+            square.appendChild(markImg);
+            grid.appendChild(square);
+        }
+
+        let squares = document.querySelectorAll('.square');
+        for (square of squares) {
+            square.addEventListener("click", (e) => {
+                let squareIndex = e.target.dataset.squareIndex
+                gameControlloer.playMove(squareIndex);
+                updateContext();
+                render();
+            })
+        }
+    }
+
+    let gameContext = document.querySelector('.gameContext');
+    function updateContext () {
+        let contexts = gameControlloer.getContext().split(', ');
+        if (contexts == undefined) {
+            gameContext.textContent = contexts; 
+        }
+        else {
+            let text = contexts[0];
+            let color = contexts[1];
+            let extraMessage = contexts[2];
+
+            if (extraMessage == 'Game Over') {
+                gameContext.textContent = `${extraMessage} !! ${text} won !!`;
+            }
+            else if (extraMessage == 'No one won') {
+                gameContext.textContent = `${extraMessage} !!`;  
+            }
+            else {
+                gameContext.textContent = `${extraMessage} ${text}'s turn to play!`;
+                gameContext.style.color = `${color}`;
+            }
+        }
+    }
+
 })();
+
