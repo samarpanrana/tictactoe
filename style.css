@@ -97,6 +97,7 @@ body {
 
 .gameContext {
     font-size: 4vw;
+    letter-spacing: 4px;
 }
 
 @keyframes shake {
